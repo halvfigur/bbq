@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/godbus/dbus"
 )
@@ -66,4 +67,12 @@ func main() {
 
 	devices := findDevice(ctx, manager, "BBQ")
 	printObjs(devices)
+
+	if err := devices[0].Connect(ctx); err != nil {
+		log.Fatal("Connect() failed, ", err)
+	}
+	defer devices[0].Disconnect(ctx)
+
+	log.Print("Sleeping for 5")
+	time.Sleep(5 * time.Second)
 }
