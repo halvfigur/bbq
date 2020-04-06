@@ -8,6 +8,13 @@ import (
 	"github.com/godbus/dbus"
 )
 
+type (
+	ObjectManager struct {
+		DBusObjectProxy
+		iface string
+	}
+)
+
 func NewObjectManager(conn *dbus.Conn, path string) *ObjectManager {
 	debug("NewObjectManager(%v, %v)", conn, path)
 

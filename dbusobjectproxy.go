@@ -34,15 +34,15 @@ func (p DBusObjectProxy) call(ctx context.Context, method string, flags dbus.Fla
 	}
 }
 
-func (p DBusObjectProxy) SetProperty(ctx context.Context, iface, key string, value interface{}) error {
-	_, err := p.call(ctx, "org.freedesktop.DBus.Properties.Set",
+func (p DBusObjectProxy) SetProperty(iface, key string, value interface{}) error {
+	_, err := p.call(context.Background(), "org.freedesktop.DBus.Properties.Set",
 		0, iface, key, dbus.MakeVariant(value))
 
 	return err
 }
 
-func (p DBusObjectProxy) GetProperty(ctx context.Context, iface, key string) ([]interface{}, error) {
-	v, err := p.call(ctx, "org.freedesktop.DBus.Properties.Get", 0, iface, key)
+func (p DBusObjectProxy) GetProperty(iface, key string) ([]interface{}, error) {
+	v, err := p.call(context.Background(), "org.freedesktop.DBus.Properties.Get", 0, iface, key)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +50,8 @@ func (p DBusObjectProxy) GetProperty(ctx context.Context, iface, key string) ([]
 	return v, nil
 }
 
-func (p DBusObjectProxy) GetStringProperty(ctx context.Context, iface, key string) (string, error) {
-	v, err := p.call(ctx, "org.freedesktop.DBus.Properties.Get", 0, iface, key)
+func (p DBusObjectProxy) GetStringProperty(iface, key string) (string, error) {
+	v, err := p.call(context.Background(), "org.freedesktop.DBus.Properties.Get", 0, iface, key)
 	if err != nil {
 		return "", err
 	}
@@ -59,8 +59,8 @@ func (p DBusObjectProxy) GetStringProperty(ctx context.Context, iface, key strin
 	return v[0].(string), nil
 }
 
-func (p DBusObjectProxy) GetBoolProperty(ctx context.Context, iface, key string) (bool, error) {
-	v, err := p.call(ctx, "org.freedesktop.DBus.Properties.Get", 0, iface, key)
+func (p DBusObjectProxy) GetBoolProperty(iface, key string) (bool, error) {
+	v, err := p.call(context.Background(), "org.freedesktop.DBus.Properties.Get", 0, iface, key)
 	if err != nil {
 		return false, err
 	}
@@ -68,8 +68,8 @@ func (p DBusObjectProxy) GetBoolProperty(ctx context.Context, iface, key string)
 	return v[0].(bool), nil
 }
 
-func (p DBusObjectProxy) GetDurationProperty(ctx context.Context, iface, key string) (time.Duration, error) {
-	v, err := p.call(ctx, "org.freedesktop.DBus.Properties.Get", 0, iface, key)
+func (p DBusObjectProxy) GetDurationProperty(iface, key string) (time.Duration, error) {
+	v, err := p.call(context.Background(), "org.freedesktop.DBus.Properties.Get", 0, iface, key)
 	if err != nil {
 		return time.Duration(0), err
 	}
@@ -77,8 +77,8 @@ func (p DBusObjectProxy) GetDurationProperty(ctx context.Context, iface, key str
 	return time.Duration(v[0].(uint32)), nil
 }
 
-func (p DBusObjectProxy) GetUint32Property(ctx context.Context, iface, key string) (uint32, error) {
-	v, err := p.call(ctx, "org.freedesktop.DBus.Properties.Get", 0, iface, key)
+func (p DBusObjectProxy) GetUint32Property(iface, key string) (uint32, error) {
+	v, err := p.call(context.Background(), "org.freedesktop.DBus.Properties.Get", 0, iface, key)
 	if err != nil {
 		return uint32(0), err
 	}
@@ -86,8 +86,8 @@ func (p DBusObjectProxy) GetUint32Property(ctx context.Context, iface, key strin
 	return v[0].(uint32), nil
 }
 
-func (p DBusObjectProxy) GetUint16Property(ctx context.Context, iface, key string) (uint16, error) {
-	v, err := p.call(ctx, "org.freedesktop.DBus.Properties.Get", 0, iface, key)
+func (p DBusObjectProxy) GetUint16Property(iface, key string) (uint16, error) {
+	v, err := p.call(context.Background(), "org.freedesktop.DBus.Properties.Get", 0, iface, key)
 	if err != nil {
 		return uint16(0), err
 	}

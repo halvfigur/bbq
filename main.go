@@ -29,15 +29,15 @@ func printObjs(objs interface{}) {
 func scan(ctx context.Context, conn *dbus.Conn) {
 	adapter := NewAdapter(conn, "/org/bluez/hci0")
 
-	if err := adapter.SetProperty(ctx, "Powered", true); err != nil {
-		log.Fatal("SetPropert() failed, ", err)
+	if err := adapter.SetPowered(true); err != nil {
+		log.Fatal("SetPowered() failed, ", err)
 	}
 
 	filter := map[string]interface{}{
 		"Transport":     "le",
 		"DuplicateData": true,
 	}
-	if err := adapter.SetDiscoveryFilter(ctx, filter); err != nil {
+	if err := adapter.SetDiscoveryFilter(filter); err != nil {
 		log.Fatal("SetDiscoveryFilter() failed, ", err)
 	}
 

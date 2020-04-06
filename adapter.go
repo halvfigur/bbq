@@ -14,17 +14,6 @@ type (
 		Properties
 		iface string
 	}
-
-	Device struct {
-		DBusObjectProxy
-		Properties
-		iface string
-	}
-
-	ObjectManager struct {
-		DBusObjectProxy
-		iface string
-	}
 )
 
 const (
@@ -42,16 +31,10 @@ func NewAdapter(conn *dbus.Conn, path string) *Adapter {
 	}
 }
 
-func (a *Adapter) SetProperty(ctx context.Context, key string, value interface{}) error {
-	debug("Adapter.SetProperty(%v, %v)", key, value)
-
-	return a.DBusObjectProxy.SetProperty(ctx, a.iface, key, value)
-}
-
-func (a *Adapter) SetDiscoveryFilter(ctx context.Context, filter map[string]interface{}) error {
+func (a *Adapter) SetDiscoveryFilter(filter map[string]interface{}) error {
 	debug("Adapter.SetDiscoveryFilter(ctx, %v)", filter)
 
-	_, err := a.call(ctx, "org.bluez.Adapter1.SetDiscoveryFilter",
+	_, err := a.call(context.Background(), "org.bluez.Adapter1.SetDiscoveryFilter",
 		0, filter)
 
 	return err
@@ -63,52 +46,56 @@ func (a *Adapter) StartDiscovery(ctx context.Context) ([]interface{}, error) {
 	return a.call(ctx, "org.bluez.Adapter1.StartDiscovery", 0)
 }
 
-func (a *Adapter) Address(ctx context.Context) (string, error) {
-	return a.GetStringProperty(ctx, a.iface, "Address")
+func (a *Adapter) Address() (string, error) {
+	return a.GetStringProperty(a.iface, "Address")
 }
 
-func (a *Adapter) AddressType(ctx context.Context) (string, error) {
-	return a.GetStringProperty(ctx, a.iface, "AddressType")
+func (a *Adapter) AddressType() (string, error) {
+	return a.GetStringProperty(a.iface, "AddressType")
 }
 
-func (a *Adapter) Name(ctx context.Context) (string, error) {
-	return a.GetStringProperty(ctx, a.iface, "Name")
+func (a *Adapter) Name() (string, error) {
+	return a.GetStringProperty(a.iface, "Name")
 }
 
-func (a *Adapter) Alias(ctx context.Context) (string, error) {
-	return a.GetStringProperty(ctx, a.iface, "Alias")
+func (a *Adapter) Alias() (string, error) {
+	return a.GetStringProperty(a.iface, "Alias")
 }
 
-func (a *Adapter) Class(ctx context.Context) (uint32, error) {
-	return a.GetUint32Property(ctx, a.iface, "Class")
+func (a *Adapter) Class() (uint32, error) {
+	return a.GetUint32Property(a.iface, "Class")
 }
 
-func (a *Adapter) Powered(ctx context.Context) (bool, error) {
-	return a.GetBoolProperty(ctx, a.iface, "Powered")
+func (a *Adapter) SetPowered(powered bool) error {
+	return a.SetProperty(a.iface, "Powered", powered)
 }
 
-func (a *Adapter) Discoverable(ctx context.Context) (bool, error) {
-	return a.GetBoolProperty(ctx, a.iface, "Discoverable")
+func (a *Adapter) Powered() (bool, error) {
+	return a.GetBoolProperty(a.iface, "Powered")
 }
 
-func (a *Adapter) Pairable(ctx context.Context) (bool, error) {
-	return a.GetBoolProperty(ctx, a.iface, "Pairable")
+func (a *Adapter) Discoverable() (bool, error) {
+	return a.GetBoolProperty(a.iface, "Discoverable")
 }
 
-func (a *Adapter) PairableTimeout(ctx context.Context) (time.Duration, error) {
-	return a.GetDurationProperty(ctx, a.iface, "Pairable")
+func (a *Adapter) Pairable() (bool, error) {
+	return a.GetBoolProperty(a.iface, "Pairable")
 }
 
-func (a *Adapter) DiscoverableTimeout(ctx context.Context) (time.Duration, error) {
-	return a.GetDurationProperty(ctx, a.iface, "DiscoverableTimeout")
+func (a *Adapter) PairableTimeout() (time.Duration, error) {
+	return a.GetDurationProperty(a.iface, "Pairable")
 }
 
-func (a *Adapter) Discovering(ctx context.Context) (bool, error) {
-	return a.GetBoolProperty(ctx, a.iface, "Discovering")
+func (a *Adapter) DiscoverableTimeout() (time.Duration, error) {
+	return a.GetDurationProperty(a.iface, "DiscoverableTimeout")
 }
 
-func (a *Adapter) UUIDS(ctx context.Context) ([]string, error) {
-	v, err := a.GetProperty(ctx, a.iface, "UUIDS")
+func (a *Adapter) Discovering() (bool, error) {
+	return a.GetBoolProperty(a.iface, "Discovering")
+}
+
+func (a *Adapter) UUIDS() ([]string, error) {
+	v, err := a.GetProperty(a.iface, "UUIDS")
 	if err != nil {
 		return nil, err
 	}

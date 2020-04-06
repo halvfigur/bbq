@@ -6,6 +6,14 @@ import (
 	"github.com/godbus/dbus"
 )
 
+type (
+	Device struct {
+		DBusObjectProxy
+		Properties
+		iface string
+	}
+)
+
 func NewDevice(conn *dbus.Conn, path string) *Device {
 	debug("NewDevice(%v, %v)", conn, path)
 
@@ -63,32 +71,32 @@ func (d *Device) CancelPairing(ctx context.Context) error {
 	return err
 }
 
-func (d *Device) Address(ctx context.Context) (string, error) {
-	return d.GetStringProperty(ctx, d.iface, "Address")
+func (d *Device) Address() (string, error) {
+	return d.GetStringProperty(d.iface, "Address")
 }
 
-func (d *Device) AddressType(ctx context.Context) (string, error) {
-	return d.GetStringProperty(ctx, d.iface, "AddressType")
+func (d *Device) AddressType() (string, error) {
+	return d.GetStringProperty(d.iface, "AddressType")
 }
 
-func (d *Device) Name(ctx context.Context) (string, error) {
-	return d.GetStringProperty(ctx, d.iface, "Name")
+func (d *Device) Name() (string, error) {
+	return d.GetStringProperty(d.iface, "Name")
 }
 
-func (d *Device) Icon(ctx context.Context) (string, error) {
-	return d.GetStringProperty(ctx, d.iface, "Icon")
+func (d *Device) Icon() (string, error) {
+	return d.GetStringProperty(d.iface, "Icon")
 }
 
-func (d *Device) Class(ctx context.Context) (uint32, error) {
-	return d.GetUint32Property(ctx, d.iface, "Icon")
+func (d *Device) Class() (uint32, error) {
+	return d.GetUint32Property(d.iface, "Icon")
 }
 
-func (d *Device) Appearance(ctx context.Context) (uint32, error) {
-	return d.GetUint32Property(ctx, d.iface, "Appearance")
+func (d *Device) Appearance() (uint32, error) {
+	return d.GetUint32Property(d.iface, "Appearance")
 }
 
-func (d *Device) UUIDS(ctx context.Context) ([]string, error) {
-	v, err := d.GetProperty(ctx, d.iface, "Appearance")
+func (d *Device) UUIDS() ([]string, error) {
+	v, err := d.GetProperty(d.iface, "Appearance")
 	if err != nil {
 		return nil, err
 	}
@@ -96,28 +104,28 @@ func (d *Device) UUIDS(ctx context.Context) ([]string, error) {
 	return v[0].([]string), nil
 }
 
-func (d *Device) Paried(ctx context.Context) (bool, error) {
-	return d.GetBoolProperty(ctx, d.iface, "Paried")
+func (d *Device) Paried() (bool, error) {
+	return d.GetBoolProperty(d.iface, "Paried")
 }
 
-func (d *Device) Connected(ctx context.Context) (bool, error) {
-	return d.GetBoolProperty(ctx, d.iface, "Connected")
+func (d *Device) Connected() (bool, error) {
+	return d.GetBoolProperty(d.iface, "Connected")
 }
 
-func (d *Device) Trusted(ctx context.Context) (bool, error) {
-	return d.GetBoolProperty(ctx, d.iface, "Trusted")
+func (d *Device) Trusted() (bool, error) {
+	return d.GetBoolProperty(d.iface, "Trusted")
 }
 
-func (d *Device) Blocked(ctx context.Context) (bool, error) {
-	return d.GetBoolProperty(ctx, d.iface, "Blocked")
+func (d *Device) Blocked() (bool, error) {
+	return d.GetBoolProperty(d.iface, "Blocked")
 }
 
-func (d *Device) Alias(ctx context.Context) (string, error) {
-	return d.GetStringProperty(ctx, d.iface, "Alias")
+func (d *Device) Alias() (string, error) {
+	return d.GetStringProperty(d.iface, "Alias")
 }
 
-func (d *Device) Adapter(ctx context.Context) (*Adapter, error) {
-	v, err := d.GetProperty(ctx, d.iface, "Adapter")
+func (d *Device) Adapter() (*Adapter, error) {
+	v, err := d.GetProperty(d.iface, "Adapter")
 	if err != nil {
 		return nil, err
 	}
@@ -125,24 +133,24 @@ func (d *Device) Adapter(ctx context.Context) (*Adapter, error) {
 	return NewAdapter(d.conn, v[0].(string)), nil
 }
 
-func (d *Device) LegacyPairing(ctx context.Context) (bool, error) {
-	return d.GetBoolProperty(ctx, d.iface, "LegacyPairing")
+func (d *Device) LegacyPairing() (bool, error) {
+	return d.GetBoolProperty(d.iface, "LegacyPairing")
 }
 
-func (d *Device) Modalias(ctx context.Context) (string, error) {
-	return d.GetStringProperty(ctx, d.iface, "Modalias")
+func (d *Device) Modalias() (string, error) {
+	return d.GetStringProperty(d.iface, "Modalias")
 }
 
-func (d *Device) RSSI(ctx context.Context) (uint16, error) {
-	return d.GetUint16Property(ctx, d.iface, "RSSI")
+func (d *Device) RSSI() (uint16, error) {
+	return d.GetUint16Property(d.iface, "RSSI")
 }
 
-func (d *Device) TxPower(ctx context.Context) (uint16, error) {
-	return d.GetUint16Property(ctx, d.iface, "TxPower")
+func (d *Device) TxPower() (uint16, error) {
+	return d.GetUint16Property(d.iface, "TxPower")
 }
 
-func (d *Device) ManufacturerData(ctx context.Context) (map[uint16][]byte, error) {
-	v, err := d.GetProperty(ctx, d.iface, "ManufacturerData")
+func (d *Device) ManufacturerData() (map[uint16][]byte, error) {
+	v, err := d.GetProperty(d.iface, "ManufacturerData")
 	if err != nil {
 		return nil, err
 	}
@@ -156,8 +164,8 @@ func (d *Device) ManufacturerData(ctx context.Context) (map[uint16][]byte, error
 	return data, nil
 }
 
-func (d *Device) ServiceData(ctx context.Context) (map[string][]byte, error) {
-	v, err := d.GetProperty(ctx, d.iface, "ServiceData")
+func (d *Device) ServiceData() (map[string][]byte, error) {
+	v, err := d.GetProperty(d.iface, "ServiceData")
 	if err != nil {
 		return nil, err
 	}
@@ -171,12 +179,12 @@ func (d *Device) ServiceData(ctx context.Context) (map[string][]byte, error) {
 	return data, nil
 }
 
-func (d *Device) ServicesResolved(ctx context.Context) (bool, error) {
-	return d.GetBoolProperty(ctx, d.iface, "ServicesResolved")
+func (d *Device) ServicesResolved() (bool, error) {
+	return d.GetBoolProperty(d.iface, "ServicesResolved")
 }
 
-func (d *Device) AdvertisingFlags(ctx context.Context) ([]byte, error) {
-	v, err := d.GetProperty(ctx, d.iface, "AdvertisingFlags")
+func (d *Device) AdvertisingFlags() ([]byte, error) {
+	v, err := d.GetProperty(d.iface, "AdvertisingFlags")
 	if err != nil {
 		return nil, err
 	}
