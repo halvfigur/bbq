@@ -9,7 +9,6 @@ import (
 type (
 	Device struct {
 		DBusObjectProxy
-		Properties
 		iface string
 	}
 )

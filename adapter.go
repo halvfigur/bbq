@@ -11,7 +11,6 @@ import (
 type (
 	Adapter struct {
 		DBusObjectProxy
-		Properties
 		iface string
 	}
 )

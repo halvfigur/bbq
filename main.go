@@ -58,12 +58,20 @@ func main() {
 
 	ctx := context.Background()
 
-	manager := NewObjectManager(conn, "/")
-	/*
-		objs := manager.GetManagedObjects(ctx)
+	sigch := make(chan *dbus.Signal, 128)
+	go func() {
+		defer close(sigch)
+		for s := range sigch {
+			log.Printf("Signal, sender=%s, path=%v, name=%s, body=%v",
+				s.Sender, s.Path, s.Name, s.Body)
+		}
+	}()
 
-		printObjs(objs)
-	*/
+	manager := NewObjectManager(conn, "/")
+
+	objs := manager.GetManagedObjects(ctx)
+
+	printObjs(objs)
 
 	devices := findDevice(ctx, manager, "BBQ")
 	printObjs(devices)
