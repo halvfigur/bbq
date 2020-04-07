@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"reflect"
 
@@ -19,19 +18,19 @@ func NewObjectManager(conn *dbus.Conn, path string) *ObjectManager {
 	debug("NewObjectManager(%v, %v)", conn, path)
 
 	return &ObjectManager{
-		DBusObjectProxy: newDBusObjectProxy(conn, destOrgBluez, path),
-		iface:           "org.freedesktop.DBus.ObjectManager",
+		DBusObjectProxy: newDBusObjectProxy(conn, destOrgBluez, "org.freedesktop.DBus.ObjectManager", path),
 	}
 }
 
-func (m *ObjectManager) GetManagedObjects(ctx context.Context) map[string]map[string]map[string]interface{} {
-
-	v, _ := m.call(ctx, "org.freedesktop.DBus.ObjectManager.GetManagedObjects", 0)
+func (m *ObjectManager) GetManagedObjects() (map[string]map[string]map[string]interface{}, error) {
 
 	//v[0] is map[dbus.ObjectPath]map[string]map[string]dbus.Variant meaning
 	// object path -> interface -> property -> variant
 
-	objs := v[0].(map[dbus.ObjectPath]map[string]map[string]dbus.Variant)
+	objs := make(map[dbus.ObjectPath]map[string]map[string]dbus.Variant)
+	if err := m.Call("org.freedesktop.DBus.ObjectManager.GetManagedObjects", 0).Store(objs); err != nil {
+		return nil, err
+	}
 
 	paths := make(map[string]map[string]map[string]interface{})
 
@@ -52,5 +51,5 @@ func (m *ObjectManager) GetManagedObjects(ctx context.Context) map[string]map[st
 	}
 
 	log.Println("paths -> ", reflect.TypeOf(paths))
-	return paths
+	return paths, nil
 }

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/godbus/dbus"
 )
@@ -50,30 +49,38 @@ func scan(ctx context.Context, conn *dbus.Conn) {
 }
 
 func main() {
-	conn, err := dbus.ConnectSystemBus()
-	if err != nil {
-		log.Fatal("ConnectSystemBus() failed, ", err)
-	}
-	defer conn.Close()
-
-	ctx := context.Background()
-
 	sigch := make(chan *dbus.Signal, 128)
 	go func() {
-		defer close(sigch)
 		for s := range sigch {
 			log.Printf("Signal, sender=%s, path=%v, name=%s, body=%v",
 				s.Sender, s.Path, s.Name, s.Body)
 		}
 	}()
 
+	conn, err := dbus.ConnectSystemBus()
+	if err != nil {
+		log.Fatal("ConnectSystemBus() failed, ", err)
+	}
+	defer conn.Close()
+
+	conn.Signal(sigch)
+
+	ctx := context.Background()
+
 	manager := NewObjectManager(conn, "/")
 
-	objs := manager.GetManagedObjects(ctx)
+	objs, err := manager.GetManagedObjects()
+	if err != nil {
+		log.Fatal("GetManagedObjects() failed, ", err)
+	}
 
 	printObjs(objs)
 
-	devices := findDevice(ctx, manager, "BBQ")
+	devices, err := findDevices(manager, "BBQ")
+	if err != nil {
+		log.Fatal("findDevice() failed, ", err)
+	}
+
 	printObjs(devices)
 
 	if err := devices[0].Connect(ctx); err != nil {
@@ -81,6 +88,9 @@ func main() {
 	}
 	defer devices[0].Disconnect(ctx)
 
-	log.Print("Sleeping for 5")
-	time.Sleep(5 * time.Second)
+	/*
+		log.Print("Sleeping for 5")
+		time.Sleep(5 * time.Second)
+	*/
+	select {}
 }

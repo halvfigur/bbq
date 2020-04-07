@@ -5,24 +5,46 @@ import "github.com/godbus/dbus"
 type (
 	GattService struct {
 		DBusObjectProxy
-		iface string
+
+		Characteristics map[string]*GattCharacteristic
 	}
 )
 
 func NewGattService(conn *dbus.Conn, path string) *GattService {
 	return &GattService{
-		DBusObjectProxy: newDBusObjectProxy(conn, destOrgBluez, path),
-		iface:           "org.bluez.GattService1",
+		DBusObjectProxy: newDBusObjectProxy(conn, destOrgBluez, "org.bluez.GattService1", path),
+		Characteristics: make(map[string]*GattCharacteristic),
 	}
 }
 
-func (s *GattService) UUID() (string, error) {
-	return s.GetStringProperty(s.iface, "UUID")
+func (s *GattService) attachCharacteristic(c *GattCharacteristic) error {
+	uuid, err := c.UUID()
+	if err != nil {
+		return nil
+	}
+
+	s.Characteristics[uuid] = c
+
+	return nil
 }
 
-/*
-   readonly s UUID = '00001801-0000-1000-8000-00805f9b34fb';
-     readonly o Device = '/org/bluez/hci0/dev_E9_13_7F_70_2C_51';
-     readonly b Primary = true;
-     readonly ao Includes = []
-*/
+func (s *GattService) UUID() (string, error) {
+	return s.GetStringProperty("UUID")
+}
+
+func (s *GattService) Primary() (bool, error) {
+	return s.GetBoolProperty("Primary")
+}
+
+func (s *GattService) Device() (string, error) {
+	path, err := s.GetObjectPathProperty("Device")
+	if err != nil {
+		return "", err
+	}
+
+	return string(path), nil
+}
+
+func (s *GattService) Includes() ([]string, error) {
+	return s.GetStringSliceProperty("Includes")
+}
