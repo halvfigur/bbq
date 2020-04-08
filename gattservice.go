@@ -1,6 +1,10 @@
 package main
 
-import "github.com/godbus/dbus"
+import (
+	"errors"
+
+	"github.com/godbus/dbus"
+)
 
 type (
 	GattService struct {
@@ -9,6 +13,8 @@ type (
 		Characteristics map[string]*GattCharacteristic
 	}
 )
+
+var ErrCharacterisicNotFound = errors.New("characteristic not found")
 
 func NewGattService(conn *dbus.Conn, path string) *GattService {
 	return &GattService{
@@ -43,6 +49,15 @@ func (s *GattService) Device() (string, error) {
 	}
 
 	return string(path), nil
+}
+
+func (s *GattService) Characteristic(uuid string) (*GattCharacteristic, error) {
+	c, ok := s.Characteristics[uuid]
+	if !ok {
+		return nil, ErrServiceNotFound
+	}
+
+	return c, nil
 }
 
 func (s *GattService) Includes() ([]string, error) {

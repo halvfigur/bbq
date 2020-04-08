@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var _d = os.Getenv("DBUS") != ""
+var _d = os.Getenv("DEBUG") != ""
 
 var _dl = log.New(os.Stderr, "[dbus] ", log.Lmicroseconds)
 

@@ -1,6 +1,10 @@
 package main
 
-import "github.com/godbus/dbus"
+import (
+	"errors"
+
+	"github.com/godbus/dbus"
+)
 
 type (
 	GattCharacteristic struct {
@@ -9,6 +13,8 @@ type (
 		Descriptors map[string]*GattDescriptor
 	}
 )
+
+var ErrDescriptorNotFound = errors.New("descriptor not found")
 
 func NewGattCharacteristic(conn *dbus.Conn, path string) *GattCharacteristic {
 	debug("NewGattCharacteristic(%v, %v)", conn, path)
@@ -41,22 +47,32 @@ func (c *GattCharacteristic) ReadValue() ([]byte, error) {
 	return blob, nil
 }
 
-func (c *GattCharacteristic) WriteValue(data []byte) error {
+func (c *GattCharacteristic) WriteValue(data []byte, options map[string]interface{}) error {
 	debug("GattCharacteristic.WriteValue()")
 
-	return c.Call("org.bluez.GattCharacteristic1.WriteValue", 0, data).Store()
+	doptions := make(map[string]dbus.Variant)
+	return c.Call("org.bluez.GattCharacteristic1.WriteValue", 0, data, doptions).Store()
 }
 
-func (c *GattCharacteristic) StartNofity() error {
-	debug("GattCharacteristic.StartNofity()")
+func (c *GattCharacteristic) StartNotify() error {
+	debug("GattCharacteristic.StartNotify()")
 
-	return c.Call("org.bluez.GattCharacteristic1.StartNofity", 0).Store()
+	return c.Call("org.bluez.GattCharacteristic1.StartNotify", 0).Store()
 }
 
-func (c *GattCharacteristic) StopNofity() error {
-	debug("GattCharacteristic.StopNofity()")
+func (c *GattCharacteristic) StopNotify() error {
+	debug("GattCharacteristic.StopNotify()")
 
-	return c.Call("org.bluez.GattCharacteristic1.StopNofity", 0).Store()
+	return c.Call("org.bluez.GattCharacteristic1.StopNotfty", 0).Store()
+}
+
+func (c *GattCharacteristic) Descriptor(uuid string) (*GattDescriptor, error) {
+	d, ok := c.Descriptors[uuid]
+	if !ok {
+		return nil, ErrDescriptorNotFound
+	}
+
+	return d, nil
 }
 
 func (c *GattCharacteristic) UUID() (string, error) {

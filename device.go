@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	"github.com/godbus/dbus"
 )
@@ -13,6 +14,8 @@ type (
 		Services map[string]*GattService
 	}
 )
+
+var ErrServiceNotFound = errors.New("service not found")
 
 func NewDevice(conn *dbus.Conn, path string) *Device {
 	debug("NewDevice(%v, %v)", conn, path)
@@ -76,6 +79,15 @@ func (d *Device) Address() (string, error) {
 
 func (d *Device) AddressType() (string, error) {
 	return d.GetStringProperty("AddressType")
+}
+
+func (d *Device) Service(uuid string) (*GattService, error) {
+	s, ok := d.Services[uuid]
+	if !ok {
+		return nil, ErrServiceNotFound
+	}
+
+	return s, nil
 }
 
 func (d *Device) Name() (string, error) {

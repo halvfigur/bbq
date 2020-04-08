@@ -10,7 +10,6 @@ import (
 type (
 	ObjectManager struct {
 		DBusObjectProxy
-		iface string
 	}
 )
 
