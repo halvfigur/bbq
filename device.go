@@ -90,6 +90,26 @@ func (d *Device) Service(uuid string) (*GattService, error) {
 	return s, nil
 }
 
+func (d *Device) Characteristic(uuid string) (*GattCharacteristic, error) {
+	for _, s := range d.Services {
+		if c, err := s.Characteristic(uuid); err == nil {
+			return c, nil
+		}
+	}
+
+	return nil, ErrCharacterisicNotFound
+}
+
+func (d *Device) Descriptor(uuid string) (*GattDescriptor, error) {
+	for _, s := range d.Services {
+		if d, err := s.Descriptor(uuid); err == nil {
+			return d, nil
+		}
+	}
+
+	return nil, ErrDescriptorNotFound
+}
+
 func (d *Device) Name() (string, error) {
 	return d.GetStringProperty("Name")
 }

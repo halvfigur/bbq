@@ -60,6 +60,16 @@ func (s *GattService) Characteristic(uuid string) (*GattCharacteristic, error) {
 	return c, nil
 }
 
+func (s *GattService) Descriptor(uuid string) (*GattDescriptor, error) {
+	for _, c := range s.Characteristics {
+		if d, err := c.Descriptor(uuid); err == nil {
+			return d, nil
+		}
+	}
+
+	return nil, ErrDescriptorNotFound
+}
+
 func (s *GattService) Includes() ([]string, error) {
 	return s.GetStringSliceProperty("Includes")
 }

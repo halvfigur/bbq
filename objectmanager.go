@@ -34,6 +34,7 @@ func (m *ObjectManager) GetManagedObjects() (map[string]map[string]map[string]in
 	paths := make(map[string]map[string]map[string]interface{})
 
 	for opath, oifaces := range objs {
+
 		ifaces := make(map[string]map[string]interface{})
 
 		for oiface, oattrs := range oifaces {
