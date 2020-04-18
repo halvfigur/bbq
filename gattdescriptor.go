@@ -1,6 +1,8 @@
 package main
 
-import "github.com/godbus/dbus"
+import (
+	dbus "github.com/godbus/dbus/v5"
+)
 
 type (
 	GattDescriptor struct {

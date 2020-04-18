@@ -6,15 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
-	"github.com/godbus/dbus"
-)
-
-const (
-	fff0UUID = "0000fff0-0000-1000-8000-00805f9b34fb"
-	fff1UUID = "0000fff1-0000-1000-8000-00805f9b34fb"
-	fff3UUID = "0000fff3-0000-1000-8000-00805f9b34fb"
-	fff5UUID = "0000fff5-0000-1000-8000-00805f9b34fb"
+	dbus "github.com/godbus/dbus/v5"
+	_ "github.com/influxdata/influxdb1-client" // this is important because of the bug in go mod
+	client "github.com/influxdata/influxdb1-client/v2"
 )
 
 func printObjs(objs interface{}) {
@@ -55,145 +51,68 @@ func scan(ctx context.Context, conn *dbus.Conn) {
 	log.Print(d)
 }
 
-func startNotifications(d *Device) error {
-	s, err := d.Service(fff0UUID)
-	if err != nil {
-		return err
-	}
-
-	fff1, err := s.Characteristic(fff1UUID)
-	if err != nil {
-		return err
-	}
-	if err = fff1.StartNotify(); err != nil {
-		return err
-	}
-
-	fff3, err := s.Characteristic(fff3UUID)
-	if err != nil {
-		return err
-	}
-	if err = fff3.StartNotify(); err != nil {
-		return err
-	}
-
-	fff5, err := s.Characteristic(fff5UUID)
-	if err != nil {
-		return err
-	}
-	if err = fff5.StartNotify(); err != nil {
-		return err
-	}
-
-	payloads := [][]byte{
-		[]byte{0x23, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x23},
-		[]byte{0x22, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22},
-		[]byte{0x22, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22},
-		[]byte{0x22, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22},
-		[]byte{0x22, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22},
-		[]byte{0x22, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22},
-		[]byte{0x22, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x22},
-		[]byte{0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x24},
-	}
-
-	fff4, err := s.Characteristic("0000fff4-0000-1000-8000-00805f9b34fb")
-	if err != nil {
-		return err
-	}
-
-	for _, payload := range payloads {
-		if err := fff4.WriteValue(payload, nil); err != nil {
-			return err
-		}
-	}
-
-	return nil
+type InfluxDBWrapper struct {
+	c client.Client
 }
 
-func tempHandler(path dbus.ObjectPath) SignalHandler {
-	return func(s *dbus.Signal) {
-		log.Printf("SignalMatcher.Match(signal=%v)", s)
-
-		if path != s.Path {
-			return
-		}
-
-		if s.Name != "org.freedesktop.DBus.Properties.PropertiesChanged" {
-			return
-		}
-
-		// Properties changed should have a 3 element payload
-		if len(s.Body) != 3 {
-			return
-		}
-
-		// The first element is the name of the interface who's property
-		// changed
-		iface, ok := s.Body[0].(string)
-		if !ok {
-			return
-		}
-
-		if iface != "org.bluez.GattCharacteristic1" {
-			return
-		}
-
-		// The second element is a dictionary mapping the names of the
-		// properties that have changed to their new values
-		props, ok := s.Body[1].(map[string]dbus.Variant)
-		if !ok {
-			return
-		}
-
-		// This is the temperature property
-		raw, ok := props["Value"]
-		if !ok {
-			return
-		}
-
-		probeSlice, ok := raw.Value().([]uint8)
-		if !ok {
-			return
-		}
-
-		log.Printf("tempHandler -  Body: %v", probeSlice)
-	}
-}
-
-func setupSignalMatchers(d *Device) ([]*SignalMatcher, error) {
-	matchers := make([]*SignalMatcher, 0)
-
-	tempChar, err := d.Characteristic(fff5UUID)
+func NewInfluxDBWrapper(addr string) (*InfluxDBWrapper, error) {
+	c, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr: fmt.Sprintf("http://%s", addr),
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	tempPath := tempChar.Path()
+	return &InfluxDBWrapper{
+		c: c,
+	}, nil
+}
 
-	// For a description of matching rules see
-	// https://dbus.freedesktop.org/doc/dbus-specification.html#message-bus-routing-match-rules
-	m := NewSignalMatcher(tempHandler(tempPath),
-		dbus.WithMatchObjectPath(tempPath),
-		dbus.WithMatchInterface("org.freedesktop.DBus.Properties"),
-		dbus.WithMatchMember("PropertiesChanged"),
-	)
+func (w *InfluxDBWrapper) PushTemperatures(temps []int16, t time.Time) error {
+	bps, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Precision:       "ms",
+		Database:        "bbq",
+		RetentionPolicy: "",
+	})
+	if err != nil {
+		return err
+	}
 
-	matchers = append(matchers, m)
+	tags := map[string]string{
+		"cut": "brisket",
+	}
 
-	return matchers, nil
+	fields := map[string]interface{}{
+		"probe1": temps[0],
+		"probe2": temps[1],
+		"probe3": temps[2],
+		"probe4": temps[3],
+		"probe5": temps[4],
+		"probe6": temps[5],
+	}
+
+	p, err := client.NewPoint("temperature",
+		tags,
+		fields,
+		t)
+	if err != nil {
+		return err
+	}
+
+	bps.AddPoint(p)
+
+	return w.c.Write(bps)
 }
 
 func main() {
-	conn, err := dbus.ConnectSystemBus()
+	conn, err := dbus.SystemBus()
 	if err != nil {
-		log.Fatal("ConnectSystemBus() failed, ", err)
+		log.Fatal("SystemBus() failed, ", err)
 	}
 	defer conn.Close()
 
 	sigch := make(chan *dbus.Signal, 128)
 	conn.Signal(sigch)
-
-	ctx := context.Background()
 
 	manager := NewObjectManager(conn, "/")
 
@@ -207,20 +126,17 @@ func main() {
 
 	device := devices[0]
 
-	if err := device.Connect(ctx); err != nil {
-		log.Fatal("Connect() failed, ", err)
-	}
-	defer devices[0].Disconnect(ctx)
-
-	if err = startNotifications(device); err != nil {
-		log.Fatal("startNotifications() failed, ", err)
-	}
-
-	matchers, err := setupSignalMatchers(devices[0])
+	db, err := NewInfluxDBWrapper("localhost:8086")
 	if err != nil {
-		log.Fatal("setupSignalMatchers() failed, ", err)
+		log.Fatal("NewInfluxDBWrapper() failed, ", err)
 	}
 
+	b, err := NewBbq(device, db)
+	if err != nil {
+		log.Fatal("NewBbq() failed, ", err)
+	}
+
+	matchers := b.SignalMatchers()
 	for _, m := range matchers {
 		conn.AddMatchSignal(m.MatchOptions()...)
 	}

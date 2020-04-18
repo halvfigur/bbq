@@ -198,29 +198,6 @@ func (b *Bbq) handleTemperatureUpdate(s *dbus.Signal) {
 	}
 }
 
-/*
-func (b *Bbq) publishTemperature(temps []int16, t time.Time) error {
-	fields := map[string]interface{}{
-		"probe1": temps[0],
-		"probe2": temps[1],
-		"probe3": temps[2],
-		"probe4": temps[3],
-		"probe5": temps[4],
-		"probe6": temps[5],
-	}
-
-	p := influxdb2.NewPoint(
-		"temperature",
-		nil, // tags
-		fields,
-		t,
-	)
-
-	log.Printf("Publish %v", fields)
-	return b.db.WritePoint(context.Background(), p)
-}
-*/
-
 func (b *Bbq) Close() error {
 	return b.dev.Disconnect(context.Background())
 }
