@@ -21,15 +21,20 @@ type (
 		PushTemperatures(temps []int16, t time.Time) error
 	}
 
+	Measurement struct {
+		Temperatures []int16
+		T            time.Time
+	}
+
 	Bbq struct {
 		dev      *Device
-		db       BbqDB
 		tempPath dbus.ObjectPath
+		events   chan Measurement
 		matchers []*SignalMatcher
 	}
 )
 
-func NewBbq(dev *Device, db BbqDB) (*Bbq, error) {
+func NewBbq(dev *Device) (*Bbq, error) {
 	if err := dev.Connect(context.Background()); err != nil {
 		return nil, err
 	}
@@ -41,8 +46,8 @@ func NewBbq(dev *Device, db BbqDB) (*Bbq, error) {
 
 	b := &Bbq{
 		dev:      dev,
-		db:       db,
 		tempPath: tempPath.Path(),
+		events:   make(chan Measurement, 1),
 	}
 
 	if err := b.setupSignalMatchers(); err != nil {
@@ -176,14 +181,21 @@ func (b *Bbq) handleTemperatureUpdate(s *dbus.Signal) {
 		return
 	}
 
-	probeSlice, ok := raw.Value().([]uint8)
+	data, ok := raw.Value().([]uint8)
 	if !ok {
 		return
 	}
 
+	// Only push out the changes if it won't block us
+	if len(b.events) == 0 {
+		b.events <- b.newMeasurement(data, t)
+	}
+}
+
+func (b *Bbq) newMeasurement(data []uint8, t time.Time) Measurement {
 	temps := make([]int16, 6)
 	for i := 0; i < 6; i++ {
-		l, h := probeSlice[2*i], probeSlice[2*i+1]
+		l, h := data[2*i], data[2*i+1]
 
 		if h == 0 {
 			temps[i] = int16(l)
@@ -193,12 +205,16 @@ func (b *Bbq) handleTemperatureUpdate(s *dbus.Signal) {
 		temps[i] = math.MinInt16
 	}
 
-	if err := b.db.PushTemperatures(temps, t); err != nil {
-		log.Print("Failed to push temperatures, ", err)
-	}
+	return Measurement{temps, t}
+}
+
+func (b *Bbq) Measurements() chan Measurement {
+	return b.events
 }
 
 func (b *Bbq) Close() error {
+	close(b.events)
+
 	return b.dev.Disconnect(context.Background())
 }
 

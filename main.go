@@ -131,7 +131,7 @@ func main() {
 		log.Fatal("NewInfluxDBWrapper() failed, ", err)
 	}
 
-	b, err := NewBbq(device, db)
+	b, err := NewBbq(device)
 	if err != nil {
 		log.Fatal("NewBbq() failed, ", err)
 	}
@@ -141,9 +141,17 @@ func main() {
 		conn.AddMatchSignal(m.MatchOptions()...)
 	}
 
-	for s := range sigch {
-		for _, m := range matchers {
-			m.Match(s)
+	for {
+		select {
+		case s := <-sigch:
+			for _, m := range matchers {
+				m.Match(s)
+			}
+
+		case m := <-b.Measurements():
+			if err := db.PushTemperatures(m.Temperatures, m.T); err != nil {
+				log.Print("Failed to push temperatures, ", err)
+			}
 		}
 	}
 }
