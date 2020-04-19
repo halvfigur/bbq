@@ -141,6 +141,8 @@ func main() {
 		conn.AddMatchSignal(m.MatchOptions()...)
 	}
 
+	w := NewWeb()
+
 	for {
 		select {
 		case s := <-sigch:
@@ -152,6 +154,9 @@ func main() {
 			if err := db.PushTemperatures(m.Temperatures, m.T); err != nil {
 				log.Print("Failed to push temperatures, ", err)
 			}
+
+			w.PushMeasurement(m)
+
 		}
 	}
 }
